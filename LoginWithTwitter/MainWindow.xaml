@@ -5,14 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LoginWithTwitter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="846.281" Width="1463.414">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="9*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <Label Content="Hello .NET Core!" HorizontalAlignment="Center" VerticalAlignment="Center"
-               FontSize="40"/>
         <Button Content="Exit" Grid.Row="1" FontSize="20" Click="ButtonExit_Click"/>
+        <Button x:Name="button_login" Content="Login With Twitter" HorizontalAlignment="Left" Height="39" Margin="156,10,0,0" VerticalAlignment="Top" Width="130" Click="Button_login_Click"/>
+        <ListBox x:Name="listBox_s3Buckets" HorizontalAlignment="Left" Height="280" Margin="49,101,0,0" VerticalAlignment="Top" Width="363"/>
+        <Label x:Name="label_s3Buckets" Content="S3 buckets" HorizontalAlignment="Center" Height="25" Margin="0,71,0,0" VerticalAlignment="Top" Width="461"/>
+        <WebBrowser x:Name="webBrowser" Margin="470,0,0.414,5.289"/>
     </Grid>
 </Window>
