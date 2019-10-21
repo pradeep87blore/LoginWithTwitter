@@ -5,9 +5,12 @@ using Hammock;
 using Hammock.Authentication.OAuth;
 using Hammock.Web;
 using System;
+using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using TweetSharp;
 
@@ -17,6 +20,8 @@ using TweetSharp;
 /// For the first hand information on what is being done, check the official website:
 /// https://developer.twitter.com/en/docs/twitter-for-websites/log-in-with-twitter/guides/implementing-sign-in-with-twitter
 /// TweetSharp is being used to abstract a few of the underlying details, where possible
+/// 
+/// Information on how to use TweetSharp: https://github.com/Yortw/tweetmoasharp
 /// </summary>
 
 
@@ -161,6 +166,9 @@ namespace LoginWithTwitter
 
                     Console.WriteLine(accessToken);
 
+                    webBrowser.Visibility = Visibility.Collapsed;
+                    label_buckets.Content = "Fetching S3 buckets, please wait";
+                    GetUserInfo(accessToken);
                     await ListS3Buckets(accessToken);
 
                 }
@@ -171,6 +179,47 @@ namespace LoginWithTwitter
                 Console.WriteLine(ex);
             }
 
+
+        }
+
+        /// <summary>
+        /// Fetch some user info and update this on to the UI
+        /// </summary>
+        /// <param name="accessToken"></param>
+        private void GetUserInfo(OAuthAccessToken accessToken)
+        {
+            try
+            {
+                service.AuthenticateWith(accessToken.Token, accessToken.TokenSecret);
+
+                GetUserProfileOptions userInfo = new GetUserProfileOptions()
+                {
+                    IncludeEntities = true,
+                    SkipStatus = false
+                };
+
+                var result = service.BeginGetUserProfile(userInfo);
+                var user = service.EndGetUserProfile(result);
+
+                var imgUrlString = user.ProfileImageUrlHttps;
+                if (imgUrlString.Contains("normal", StringComparison.OrdinalIgnoreCase))
+                {
+                    // To get a bigger image. Refer to https://developer.twitter.com/en/docs/accounts-and-users/user-profile-images-and-banners
+                    imgUrlString = imgUrlString.Replace("normal", "bigger", StringComparison.OrdinalIgnoreCase);
+                }
+                Uri profileImgUrl = new Uri(imgUrlString);
+                
+                image_profileImg.Source = new BitmapImage(profileImgUrl);
+
+                label_screenName.Content = user.ScreenName;
+
+                if(user.Status != null)
+                    label_latestTweet.Content = "Latest Tweet: " + user.Status.Text;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
 
         }
 
@@ -192,6 +241,8 @@ namespace LoginWithTwitter
             {
                 // This call is performed with the authenticated role and credentials
                 var bucketList = await s3Client.ListBucketsAsync();
+
+                label_buckets.Content = "S3 Buckets";
                 foreach (var bucket in bucketList.Buckets)
                 {
                     listBox_s3Buckets.Items.Add(bucket.BucketName);

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LoginWithTwitter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="846.281" Width="1463.414" Initialized="Window_Initialized">
+        Title="Login with Twitter" Height="846.281" Width="1463.414" Initialized="Window_Initialized">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="9*"/>
@@ -13,8 +13,11 @@
         </Grid.RowDefinitions>
         <Button Content="Exit" Grid.Row="1" FontSize="20" Click="ButtonExit_Click"/>
         <Button x:Name="button_login" Content="Login With Twitter" HorizontalAlignment="Left" Height="39" Margin="156,10,0,0" VerticalAlignment="Top" Width="130" Click="Button_login_Click"/>
-        <ListBox x:Name="listBox_s3Buckets" HorizontalAlignment="Left" Height="280" Margin="49,101,0,0" VerticalAlignment="Top" Width="363"/>
-        <Label x:Name="label_s3Buckets" Content="S3 buckets" HorizontalAlignment="Center" Height="25" Margin="0,71,0,0" VerticalAlignment="Top" Width="461"/>
+        <ListBox x:Name="listBox_s3Buckets" HorizontalAlignment="Left" Height="474" Margin="49,222,0,0" VerticalAlignment="Top" Width="363"/>
         <WebBrowser x:Name="webBrowser" Margin="470,0,0.414,5.289"/>
+        <Label x:Name="label_buckets" Content="S3 Buckets" HorizontalAlignment="Left" Height="42" Margin="50,180,0,0" VerticalAlignment="Top" Width="362"/>
+        <Label x:Name="label_screenName" Content="" HorizontalAlignment="Left" Height="29" Margin="46,76,0,0" VerticalAlignment="Top" Width="362"/>
+        <Image x:Name="image_profileImg" HorizontalAlignment="Left" Height="68" Margin="49,106,0,0" VerticalAlignment="Top" Width="68"/>
+        <Label x:Name="label_latestTweet" Content="" HorizontalAlignment="Left" Height="70" Margin="138,110,0,0" VerticalAlignment="Top" Width="270"/>
     </Grid>
 </Window>
