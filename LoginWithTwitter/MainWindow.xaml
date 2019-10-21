@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LoginWithTwitter"
         mc:Ignorable="d"
-        Title="MainWindow" Height="846.281" Width="1463.414">
+        Title="MainWindow" Height="846.281" Width="1463.414" Initialized="Window_Initialized">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="9*"/>

@@ -4,41 +4,39 @@ using Amazon.S3;
 using Hammock;
 using Hammock.Authentication.OAuth;
 using Hammock.Web;
-using Spring.Social.OAuth1;
-using Spring.Social.Twitter.Api;
-using Spring.Social.Twitter.Connect;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Web;
 using System.Windows;
 using System.Windows.Navigation;
 using TweetSharp;
 
+/// <summary>
+/// Info:
+/// This page demonstrates how to log in with Twitter
+/// For the first hand information on what is being done, check the official website:
+/// https://developer.twitter.com/en/docs/twitter-for-websites/log-in-with-twitter/guides/implementing-sign-in-with-twitter
+/// TweetSharp is being used to abstract a few of the underlying details, where possible
+/// </summary>
+
+
 namespace LoginWithTwitter
 {
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        AmazonS3Client client;
-
-        string consumerKey = "grRaaaaaYbbb7gNjPS5fYqId";
-
-        string consumerSecret = "aaaDV0bbb7rPMPUbym2djFhJOephGcccVMncBZDtQfhOhCHq16";
-
+        string consumerKey = null;
+        string consumerSecret = null;
+        string awsIdentityPoolId = null;
         OAuthRequestToken requestToken;
-
         TwitterService service;
 
         public MainWindow()
         {
             InitializeComponent();
-
-           
-
-
         }
 
         private void ButtonExit_Click(object sender, RoutedEventArgs e)
@@ -46,12 +44,23 @@ namespace LoginWithTwitter
             Application.Current.Shutdown();
         }
 
-        private async void Button_login_Click(object sender, RoutedEventArgs e)
+        private void Window_Initialized(object sender, EventArgs e)
+        {
+            if (!LoadSecrets())
+            {
+                string msg = "Failed to read the Twitter secrets. Ensure that the file secrets.txt is correctly located with the exe and its contents are properly filled\n";
+                msg += "Sample contents of the file: \n";
+                msg += "ConsumerKey=rDt8YmVT7gNYqIdHjPSbgrR5f\nConsumerSecret=CHq16rf72dRVtQfhPMPUbOhhgfgjFMncBZDhJbfmhrykaDV0j5\nIdentityPool=ap-southeast-2:39763976-9bda-4195-4195-53b439bda407";
+
+                MessageBox.Show(msg);
+            }
+        }
+
+        private void Button_login_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 Login();
-
             }
             catch (Exception ex)
             {
@@ -59,29 +68,36 @@ namespace LoginWithTwitter
             }
         }
 
+        /// <summary>
+        /// Initiate the login flow
+        /// </summary>
         private void Login()
         {
+            // Use the Consumer Key and Consumer Secret Key to fetch a valid Twitter Service handle
             service = new TwitterService(consumerKey, consumerSecret);
 
-            // Step 1 - Retrieve an OAuth Request Token
+            // Retrieve an OAuth Request Token
             requestToken = service.GetRequestToken();
 
-            Uri uri = service.GetAuthorizationUri(requestToken);
-            StartTwitterLoginDialog(uri.ToString());
+            // Obtain the URI that shall be used for the login
+            Uri twitterLoginUrl = service.GetAuthorizationUri(requestToken);
+            StartTwitterLoginDialog(twitterLoginUrl.ToString());
 
         }
 
-
-        private void StartTwitterLoginDialog(string url)
+        /// <summary>
+        /// Navigate to the Twitter login URL
+        /// </summary>
+        /// <param name="url"></param>
+        private void StartTwitterLoginDialog(string twitterLoginUrl)
         {
-
-            webBrowser.Navigated += WebBrowser_Navigated; // webBrowser_Navigated;
-            webBrowser.Navigate(url);
+            webBrowser.Navigated += WebBrowser_Navigated; // Subscribe to the Navigated event
+            webBrowser.Navigate(twitterLoginUrl);
         }
 
-
-        
-
+        /// <summary>
+        /// This is to set the parameters up for querying for the access token
+        /// </summary>
         private readonly Func<FunctionArguments, RestRequest> _accessTokenQuery
                 = args =>
                 {
@@ -104,8 +120,12 @@ namespace LoginWithTwitter
                     return request;
                 };
 
-
-        private void WebBrowser_Navigated(object sender, NavigationEventArgs e)
+        /// <summary>
+        /// The event triggered when the web browser control navigates to a specified URL
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void WebBrowser_Navigated(object sender, NavigationEventArgs e)
         {
             try
             {
@@ -141,10 +161,7 @@ namespace LoginWithTwitter
 
                     Console.WriteLine(accessToken);
 
-                    // Step 4 - User authenticates using the Access Token
-                    service.AuthenticateWith(accessToken.Token, accessToken.TokenSecret);
-                    
-                    // NEXT: See how to access some resources of the logged in user
+                    await ListS3Buckets(accessToken);
 
                 }
             }
@@ -155,6 +172,78 @@ namespace LoginWithTwitter
             }
 
 
+        }
+
+        /// <summary>
+        /// Use the fetched token to access the S3 buckets
+        /// </summary>
+        /// <param name="accessToken"></param>
+        /// <returns></returns>
+        private async Task ListS3Buckets(OAuthAccessToken accessToken)
+        {
+            CognitoAWSCredentials credentials = new CognitoAWSCredentials(
+                awsIdentityPoolId, // Identity pool ID
+                RegionEndpoint.APSoutheast2);
+
+            credentials.AddLogin("api.twitter.com", accessToken.Token + ";" + accessToken.TokenSecret);
+            var cred = await credentials.GetCredentialsAsync();
+
+            using (var s3Client = new AmazonS3Client(cred.AccessKey, cred.SecretKey, cred.Token, RegionEndpoint.APSoutheast2))
+            {
+                // This call is performed with the authenticated role and credentials
+                var bucketList = await s3Client.ListBucketsAsync();
+                foreach (var bucket in bucketList.Buckets)
+                {
+                    listBox_s3Buckets.Items.Add(bucket.BucketName);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Read the Secrets file
+        /// </summary>
+        /// <returns></returns>
+        private bool LoadSecrets()
+        {
+            try
+            {
+                string line;
+
+                /* The file contents are as follows:
+                ConsumerKey=rDt8YmVT7gNYqIdHjPSbgrR5f
+                ConsumerSecret=CHq16rf72dRVtQfhPMPUbOhhgfgjFMncBZDhJbfmhrykaDV0j5
+                IdentityPool=ap-southeast-2:39763976-9bda-4195-4195-53b439bda407
+                */
+
+                System.IO.StreamReader secretsFile = new System.IO.StreamReader("secrets.keys");
+                while ((line = secretsFile.ReadLine()) != null)
+                {
+                    if (line.Contains("ConsumerKey"))
+                    {
+                        var split = line.Split('=');
+                        consumerKey = split[1];
+                    }
+                    else if (line.Contains("ConsumerSecret"))
+                    {
+                        var split = line.Split('=');
+                        consumerSecret = split[1];
+                    }
+                    else  if(line.Contains("IdentityPool"))
+                    {
+                        var split = line.Split('=');
+                        awsIdentityPoolId = split[1];
+                    }
+                    System.Console.WriteLine(line);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return false;
+            }
+
+            return true;
         }
     }
 }

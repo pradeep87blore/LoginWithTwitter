@@ -10,8 +10,17 @@
     <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.100.84" />
     <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.103.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.104.36" />
-    <PackageReference Include="Spring.Social.Twitter" Version="1.0.1" />
     <PackageReference Include="TweetSharp" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="app.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>app.Designer.cs</LastGenOutput>
+    </None>
+    <None Update="secrets.keys">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
